@@ -1,31 +1,66 @@
 # zalo-bot-js
 
-TypeScript SDK for the Zalo Bot API, ported from the reference package in `python_zalo_bot`.
+SDK TypeScript cho Zalo Bot API, hướng đến người dùng Việt Nam nhưng vẫn có tài liệu tiếng Anh rõ ràng cho cộng đồng quốc tế.
 
-## Current architecture
+[Tài liệu tiếng Việt](docs/vi/index.md) | [English docs](docs/en/index.md)
 
-- `src/request`: HTTP transport and API error mapping
-- `src/models`: `User`, `Chat`, `Message`, `Update`, `WebhookInfo`
-- `src/core`: `Bot`, `Application`, `ApplicationBuilder`, `CallbackContext`
-- `src/handlers`: command and message handlers
-- `src/filters`: composable update filters
-- `examples`: polling and webhook usage
+## Giới thiệu nhanh
 
-## Scope of this first port
+`zalo-bot-js` là một thư viện Node.js + TypeScript được port từ package tham chiếu `python_zalo_bot`, nhưng được tổ chức lại theo phong cách TypeScript-native:
 
-Included:
-- Bot token validation through `getMe`
-- Long polling with `Application.runPolling()`
-- Sending text, photo, sticker, and chat action messages
-- Webhook registration helpers
-- Filter-based message routing
+- dễ khởi tạo bot bằng token
+- có long polling và webhook helper
+- có `CommandHandler`, `MessageHandler`, `filters`
+- có script test token và bot thử từ `.env`
+- có cấu trúc module rõ ràng để tiếp tục mở rộng
 
-Not included yet:
-- Multipart media upload abstractions
-- Worker queue and updater patterns from the Python package
-- Framework-specific webhook server integrations inside the SDK core
+## Tính năng hiện có
 
-## Quick example
+- `Bot.getMe()` để kiểm tra token và lấy thông tin bot
+- `Application.runPolling()` để nhận update bằng long polling
+- `sendMessage`, `sendPhoto`, `sendSticker`, `sendChatAction`
+- `setWebhook`, `deleteWebhook`, `getWebhookInfo`
+- routing theo command và filter
+- fallback parse cho payload phản hồi mỏng từ API
+
+## Chưa hỗ trợ đầy đủ
+
+- upload media multipart hoàn chỉnh
+- worker queue / updater layer như các framework bot lớn
+- webhook adapter framework-specific trong core SDK
+- bộ test tự động đầy đủ cho mọi endpoint
+
+## Quick start
+
+### 1. Cài dependencies
+
+```bash
+npm install
+```
+
+### 2. Tạo file `.env`
+
+Tạo `.env` từ `.env.example`:
+
+```env
+ZALO_BOT_TOKEN=your_zalo_bot_token_here
+```
+
+### 3. Kiểm tra token
+
+```bash
+npm run test:token
+```
+
+### 4. Chạy bot thử
+
+```bash
+npm run test:hello-bot
+```
+
+Sau đó nhắn `/start` hoặc `hello` để test flow cơ bản.
+
+## Ví dụ khởi động bot
 
 ```ts
 import {
@@ -40,24 +75,45 @@ const app = new ApplicationBuilder()
   .build();
 
 app.addHandler(new CommandHandler("start", async (update) => {
-  await update.message?.replyText("Hello from zalo-bot-js");
+  await update.message?.replyText("Xin chào từ zalo-bot-js");
 }));
 
 app.addHandler(
   new MessageHandler(filters.TEXT.and(filters.COMMAND.not()), async (update) => {
-    await update.message?.replyText(`Echo: ${update.message?.text ?? ""}`);
+    await update.message?.replyText(`Bạn vừa nói: ${update.message?.text ?? ""}`);
   }),
 );
 
 void app.runPolling();
 ```
 
+## Kiến trúc hiện tại
+
+- `src/request`: HTTP transport và API error mapping
+- `src/models`: `User`, `Chat`, `Message`, `Update`, `WebhookInfo`
+- `src/core`: `Bot`, `Application`, `ApplicationBuilder`, `CallbackContext`
+- `src/handlers`: command và message handlers
+- `src/filters`: composable filters
+- `examples`: ví dụ polling và webhook
+- `test`: script thử token và bot thật bằng `.env`
+
+## Tài liệu
+
+- Tiếng Việt: [docs/vi/index.md](docs/vi/index.md)
+- English: [docs/en/index.md](docs/en/index.md)
+- GitHub Pages docs sẽ được build từ thư mục `docs/`
+
 ## Development
 
-- `npm run build`: compile TypeScript into `dist/`
-- `npm run check`: type-check without emitting files
-- `npm run test:hello-bot`: polling bot test, reply `/start` va `hello`
-- `npm run test:token`: load `ZALO_BOT_TOKEN` from `.env` and call `getMe()`
-- `npm test`: currently aliases `npm run check`
+- `npm run build`: build thư viện TypeScript
+- `npm run check`: type-check không emit
+- `npm run test:token`: đọc token từ `.env` và gọi `getMe()`
+- `npm run test:hello-bot`: chạy bot polling để test `/start` và `hello`
+- `npm run docs:dev`: chạy docs local bằng VitePress
+- `npm run docs:build`: build static docs cho GitHub Pages
+- `npm run docs:preview`: preview docs đã build
+- `npm test`: chạy check, build và smoke test
 
-Create `.env` from `.env.example` before running the token check.
+## English summary
+
+`zalo-bot-js` is a TypeScript-first SDK for the Zalo Bot API. It currently supports token validation, long polling, webhook helpers, command/message handlers, and simple `.env`-based test scripts. For full documentation, see [English docs](docs/en/index.md).
