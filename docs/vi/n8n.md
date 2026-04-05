@@ -493,7 +493,7 @@ try {
 
 Bạn có thể mở rộng `.env` với các biến sau:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
 ZALO_WEBHOOK_URL=https://your-domain.example/webhook

@@ -20,7 +20,7 @@ Recommended flow:
 3. Copy the bot token after the bot is created successfully.
 4. Save the token into `.env` before running the local test scripts.
 
-![QR code to the bot management page](/image/zbot-creator_qrcode.jpg)
+![QR code to the bot management page](../../image/zbot-creator_qrcode.jpg)
 
 If you are reading the documentation on a different screen or device, scan the QR code to jump directly to the bot management page.
 
@@ -34,7 +34,7 @@ npm install
 
 Create a `.env` file in the project root:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
 ```

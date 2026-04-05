@@ -75,7 +75,7 @@ Bạn cần có một server chạy với domain HTTPS để đăng ký webhook 
 
 Sau khi có URL public, hãy chuẩn bị `.env`:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_WEBHOOK_URL=https://your-public-domain.example/webhook
 ZALO_WEBHOOK_SECRET=replace-with-a-random-secret

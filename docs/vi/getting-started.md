@@ -20,7 +20,7 @@ Quy trình khuyến nghị:
 3. Sao chép bot token sau khi bot được tạo thành công.
 4. Lưu token vào file `.env` trước khi chạy các script test.
 
-![Mã QR tới trang quản lý bot](/image/zbot-creator_qrcode.jpg)
+![Mã QR tới trang quản lý bot](../../image/zbot-creator_qrcode.jpg)
 
 Nếu bạn mở tài liệu trên điện thoại hoặc một màn hình khác, chỉ cần quét mã QR để đi thẳng tới trang quản lý bot.
 
@@ -34,7 +34,7 @@ npm install
 
 Tạo file `.env` tại root repo:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
 ```

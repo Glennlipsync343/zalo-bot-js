@@ -13,7 +13,7 @@ The current SDK is divided into clear layers:
 
 ## Basic run flow
 
-![Bot runtime flow](/image/usecase-bot.png)
+![Bot runtime flow](../../image/usecase-bot.png)
 
 ## Mapping from Python to TypeScript
 

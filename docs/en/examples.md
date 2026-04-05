@@ -73,7 +73,7 @@ You need a server with an HTTPS domain to register a webhook endpoint. You can u
 
 After you have a public URL, prepare `.env`:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_WEBHOOK_URL=https://your-public-domain.example/webhook
 ZALO_WEBHOOK_SECRET=replace-with-a-random-secret

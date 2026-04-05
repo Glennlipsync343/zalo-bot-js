@@ -175,7 +175,7 @@ Nếu cần đối chiếu với Bot API gốc, có thể hiểu rằng `sendMes
 
 Để chạy ví dụ trong repo, bạn thường cần:
 
-```env
+```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_CHAT_ID=abc.xyz
 ZALO_BOT_LANG=vi
