@@ -37,6 +37,7 @@ Create a `.env` file in the project root:
 ```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
+ZALO_BOT_ADMIN_ID=your_zalo_account_id_here
 ```
 
 `ZALO_BOT_LANG` supports:
@@ -45,6 +46,34 @@ ZALO_BOT_LANG=vi
 - `en`: runtime logs and helper messages in English
 
 If unset, the current default is `vi`.
+
+## Built-in identity and admin commands
+
+From the latest runtime, the SDK includes:
+
+- `/id`: replies with the sender account id and `admin=true/false`
+- `/setadmin`: works one time only and persists `ZALO_BOT_ADMIN_ID` into `.env`
+
+After admin is configured, subsequent `/setadmin` calls are rejected to prevent accidental takeover.
+
+Example admin checks in bot code:
+
+```ts
+bot.on("text", async (message) => {
+  if (!message.admin) {
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Admin-only command.");
+});
+
+bot.onText(/\/secure/, async (message) => {
+  if (!bot.isAdmin(message.fromUser?.id)) {
+    await bot.sendMessage(message.chat.id, "You are not an admin.");
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Secure command executed.");
+});
+```
 
 ## Choose API style
 

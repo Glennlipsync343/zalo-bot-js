@@ -37,6 +37,7 @@ Tạo file `.env` tại root repo:
 ```dotenv
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
+ZALO_BOT_ADMIN_ID=your_zalo_account_id_here
 ```
 
 `ZALO_BOT_LANG` hỗ trợ:
@@ -45,6 +46,34 @@ ZALO_BOT_LANG=vi
 - `en`: log và thông điệp runtime bằng tiếng Anh
 
 Nếu không cấu hình, SDK hiện mặc định dùng `vi`.
+
+## Lệnh built-in cho ID và admin
+
+Từ phiên bản mới, SDK có sẵn 2 lệnh runtime:
+
+- `/id`: bot trả về id account đang nhắn và trạng thái `admin=true/false`
+- `/setadmin`: chỉ set 1 lần đầu, lưu vào `.env` tại key `ZALO_BOT_ADMIN_ID`
+
+Sau khi đã set admin, mọi lần `/setadmin` tiếp theo sẽ bị từ chối để tránh đổi admin ngoài ý muốn.
+
+Ví dụ kiểm tra quyền admin khi code bot:
+
+```ts
+bot.on("text", async (message) => {
+  if (!message.admin) {
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Lenh chi admin moi duoc dung.");
+});
+
+bot.onText(/\/secure/, async (message) => {
+  if (!bot.isAdmin(message.fromUser?.id)) {
+    await bot.sendMessage(message.chat.id, "Ban khong co quyen admin.");
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Da chay lenh secure.");
+});
+```
 
 ## Chọn style API
 

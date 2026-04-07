@@ -9,6 +9,9 @@ import { WebhookInfo } from "../models/WebhookInfo";
 import { BaseRequest, type RequestPayload } from "../request/BaseRequest";
 import { FetchRequest } from "../request/FetchRequest";
 import type { JsonObject, RequestOptions } from "../types";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 export interface BotConfig {
   token: string;
@@ -191,6 +194,7 @@ export class Bot {
   private pollingTask?: Promise<void>;
   private pollingAbortController?: AbortController;
   private nextUpdateOffset?: number;
+  private adminId = process.env.ZALO_BOT_ADMIN_ID?.trim() ?? "";
 
   private readonly config: BotConfig;
 
@@ -666,6 +670,9 @@ export class Bot {
       this.nextUpdateOffset = normalizedUpdate.updateId + 1;
     }
 
+    await this.tryHandleSetAdmin(normalizedUpdate.message);
+    await this.tryHandleWhoAmI(normalizedUpdate.message);
+
     const metadata: EventMetadata = {
       update: normalizedUpdate,
       command: normalizedUpdate.command,
@@ -793,6 +800,17 @@ export class Bot {
     return this.botUser;
   }
 
+  getAdminId(): string | undefined {
+    return this.adminId || undefined;
+  }
+
+  isAdmin(userId?: string): boolean {
+    if (!userId || !this.adminId) {
+      return false;
+    }
+    return userId === this.adminId;
+  }
+
   private async reportError(
     error: unknown,
     context: BotErrorContext,
@@ -823,6 +841,7 @@ export class Bot {
       return;
     }
     this.pollingState = "running";
+    await this.logStartupStatus(options.requestOptions);
 
     try {
       while (this.pollingState === "running") {
@@ -938,6 +957,68 @@ export class Bot {
     const request = endpoint === "getUpdates" ? this.request[0] : this.request[1];
     return request.post(`${this.baseUrl}/${endpoint}`, compactPayload(data), options);
   }
+
+  private async tryHandleSetAdmin(message: Message): Promise<void> {
+    const text = message.text?.trim().toLowerCase();
+    if (text !== "/setadmin") {
+      return;
+    }
+
+    if (this.adminId) {
+      await this.sendMessage(message.chat.id, "Admin Bot da duoc set truoc do, khong the set lai.");
+      return;
+    }
+
+    const candidateAdminId = message.fromUser?.id;
+    if (!candidateAdminId) {
+      await this.sendMessage(message.chat.id, "Khong lay duoc ID account. Thu lai voi tai khoan ca nhan.");
+      return;
+    }
+
+    await writeOrUpdateEnv("ZALO_BOT_ADMIN_ID", candidateAdminId);
+    this.adminId = candidateAdminId;
+    process.env.ZALO_BOT_ADMIN_ID = candidateAdminId;
+    await this.sendMessage(message.chat.id, `Admin Bot da duoc set: ${candidateAdminId}`);
+  }
+
+  private async tryHandleWhoAmI(message: Message): Promise<void> {
+    const text = message.text?.trim().toLowerCase();
+    if (text !== "/id") {
+      return;
+    }
+
+    const accountId = message.fromUser?.id;
+    if (!accountId) {
+      await this.sendMessage(message.chat.id, "Khong lay duoc ID account.");
+      return;
+    }
+
+    await this.sendMessage(
+      message.chat.id,
+      `ID cua ban: ${accountId}\nadmin=${this.isAdmin(accountId)}`,
+    );
+  }
+
+  private async logStartupStatus(options?: RequestOptions): Promise<void> {
+    const pingStart = Date.now();
+    const user = await this.getMe(options);
+    const pingMs = Date.now() - pingStart;
+    const ramMb = process.memoryUsage().rss / (1024 * 1024);
+    const serverIp = getServerIpAddress();
+    const country = await getCountryByIp(serverIp);
+    const packageInfo = await getPackageInfo();
+    const versionStatus = await getVersionStatus(packageInfo.name, packageInfo.version);
+    const botName = user.displayName ?? user.accountName ?? "Unknown";
+    const adminLabel = this.adminId ? `Da set (${this.adminId})` : "Chua set";
+
+    console.log("[Zalo-bot-js] >> Bot khoi dong thanh cong...");
+    console.log(`[Zalo-bot-js] >> Phien ban dang chay: ${versionStatus}`);
+    console.log(`[Zalo-bot-js] >> Ban dang chay tren server: ${country}`);
+    console.log(`[Zalo-bot-js] >> Bot Name: ${botName} (${user.id})`);
+    console.log(`[Zalo-bot-js] >> Admin Bot: ${adminLabel}`);
+    console.log(`[Zalo-bot-js] >> Ping: ${pingMs}ms`);
+    console.log(`[Zalo-bot-js] >> Ram: ${ramMb.toFixed(2)}MB`);
+  }
 }
 
 function compactPayload(data?: RequestPayload): RequestPayload {
@@ -983,6 +1064,119 @@ function createRegexMatcher(pattern: RegExp): RegExp {
 function normalizeCommand(command: string): string {
   const normalized = command.trim().replace(/^\//, "");
   return normalized.toLowerCase();
+}
+
+function getServerIpAddress(): string {
+  const interfaces = os.networkInterfaces();
+  for (const entries of Object.values(interfaces)) {
+    if (!entries) {
+      continue;
+    }
+    for (const info of entries) {
+      if (info.family === "IPv4" && !info.internal) {
+        return info.address;
+      }
+    }
+  }
+  return "127.0.0.1";
+}
+
+async function getCountryByIp(ip: string): Promise<string> {
+  try {
+    const response = await fetch(`https://api.country.is/${ip}`);
+    if (!response.ok) {
+      return "unknown";
+    }
+    const payload = (await response.json()) as { country?: unknown };
+    return typeof payload.country === "string" ? payload.country : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+let cachedPackageVersion: string | undefined;
+let cachedPackageName: string | undefined;
+
+async function getPackageInfo(): Promise<{ name: string; version: string }> {
+  if (cachedPackageVersion && cachedPackageName) {
+    return { name: cachedPackageName, version: cachedPackageVersion };
+  }
+
+  try {
+    const packagePath = path.resolve(process.cwd(), "package.json");
+    const content = await fs.readFile(packagePath, "utf8");
+    const parsed = JSON.parse(content) as { name?: unknown; version?: unknown };
+    cachedPackageName = typeof parsed.name === "string" ? parsed.name : "zalo-bot-js";
+    cachedPackageVersion = typeof parsed.version === "string" ? parsed.version : "unknown";
+    return { name: cachedPackageName, version: cachedPackageVersion };
+  } catch {
+    return { name: "zalo-bot-js", version: "unknown" };
+  }
+}
+
+async function getVersionStatus(packageName: string, currentVersion: string): Promise<string> {
+  try {
+    const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`);
+    if (!response.ok) {
+      return "Khong kiem tra duoc ban moi (npm registry loi).";
+    }
+
+    const payload = (await response.json()) as { version?: unknown };
+    const latestVersion = typeof payload.version === "string" ? payload.version : undefined;
+    if (!latestVersion || currentVersion === "unknown") {
+      return "Khong xac dinh duoc phien ban npm moi nhat.";
+    }
+
+    const compareResult = compareSemver(currentVersion, latestVersion);
+    if (compareResult >= 0) {
+      return `Moi nhat ${currentVersion}`;
+    }
+
+    return `Co ban moi ${latestVersion}. Hien tai ${currentVersion}. Chay: npm i ${packageName}@latest`;
+  } catch {
+    return "Khong kiem tra duoc ban moi (mat ket noi).";
+  }
+}
+
+function compareSemver(a: string, b: string): number {
+  const aCore = a.split("-")[0];
+  const bCore = b.split("-")[0];
+  const aParts = aCore.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const bParts = bCore.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const length = Math.max(aParts.length, bParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const aValue = aParts[index] ?? 0;
+    const bValue = bParts[index] ?? 0;
+    if (aValue > bValue) {
+      return 1;
+    }
+    if (aValue < bValue) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
+async function writeOrUpdateEnv(key: string, value: string): Promise<void> {
+  const envPath = path.resolve(process.cwd(), ".env");
+  let content = "";
+  try {
+    content = await fs.readFile(envPath, "utf8");
+  } catch {
+    content = "";
+  }
+
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const matcher = new RegExp(`^${escapedKey}=.*$`, "m");
+  const nextLine = `${key}=${value}`;
+  if (matcher.test(content)) {
+    content = content.replace(matcher, nextLine);
+  } else {
+    const suffix = content.endsWith("\n") || content.length === 0 ? "" : "\n";
+    content = `${content}${suffix}${nextLine}\n`;
+  }
+
+  await fs.writeFile(envPath, content, "utf8");
 }
 
 const defaultLogger: BotLogger = {

@@ -13,6 +13,7 @@ export interface MessageInit {
   sticker?: string;
   photoUrl?: string;
   fromUser?: User;
+  admin?: boolean;
   raw?: JsonObject;
 }
 
@@ -26,6 +27,7 @@ export class Message {
   readonly sticker?: string;
   readonly photoUrl?: string;
   readonly fromUser?: User;
+  readonly admin: boolean;
   readonly raw?: JsonObject;
 
   constructor(init: MessageInit) {
@@ -38,6 +40,7 @@ export class Message {
     this.sticker = init.sticker;
     this.photoUrl = init.photoUrl;
     this.fromUser = init.fromUser;
+    this.admin = init.admin ?? false;
     this.raw = init.raw;
   }
 
@@ -62,6 +65,7 @@ export class Message {
     }
 
     const timestamp = typeof data.date === "number" ? data.date : Date.now();
+    const fromUser = User.fromApi(asJsonObject(data.from));
 
     return new Message({
       bot,
@@ -72,7 +76,8 @@ export class Message {
       text: typeof data.text === "string" ? data.text : undefined,
       sticker: typeof data.sticker === "string" ? data.sticker : undefined,
       photoUrl: typeof data.photo_url === "string" ? data.photo_url : undefined,
-      fromUser: User.fromApi(asJsonObject(data.from)),
+      fromUser,
+      admin: bot?.isAdmin(fromUser?.id),
       raw: data,
     });
   }

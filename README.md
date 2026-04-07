@@ -47,6 +47,7 @@ npm i zalo-bot-js
 ```env
 ZALO_BOT_TOKEN=your_zalo_bot_token_here
 ZALO_BOT_LANG=vi
+ZALO_BOT_ADMIN_ID=your_zalo_account_id_here
 ```
 
 `ZALO_BOT_LANG` currently supports `vi` and `en`.
@@ -83,6 +84,35 @@ This is the fastest path to a working bot:
 
 Detailed guide: [Getting started](https://kaiyodev.github.io/zalo-bot-js/vi/getting-started)
 
+## Admin Setup And Identity Commands
+
+The SDK now includes built-in identity/admin helper commands in the polling flow:
+
+- `/id`: replies with your account id and `admin=true/false`
+- `/setadmin`: sets admin only one time and writes `ZALO_BOT_ADMIN_ID=<id>` into `.env`
+
+After admin is set, `/setadmin` is locked and cannot be changed by other users.
+
+Use admin checks in your bot code:
+
+```ts
+bot.on("text", async (message) => {
+  if (!message.admin) {
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Admin-only command");
+});
+
+bot.onText(/\/secure/, async (message) => {
+  const isAdmin = bot.isAdmin(message.fromUser?.id);
+  if (!isAdmin) {
+    await bot.sendMessage(message.chat.id, "You are not admin.");
+    return;
+  }
+  await bot.sendMessage(message.chat.id, "Secure command executed.");
+});
+```
+
 ## Main API Surface
 
 ### Bot lifecycle and identity
@@ -91,6 +121,8 @@ Detailed guide: [Getting started](https://kaiyodev.github.io/zalo-bot-js/vi/gett
 - `shutdown()`
 - `cachedUser`
 - `getMe()`
+- `getAdminId()`
+- `isAdmin(userId)`
 
 ### Updates and runtime
 
@@ -131,6 +163,7 @@ Detailed guide: [Getting started](https://kaiyodev.github.io/zalo-bot-js/vi/gett
 - `message.replyPhoto()`
 - `message.replySticker()`
 - `message.replyAction()`
+- `message.admin`
 
 ### Handler-based API
 
