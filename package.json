@@ -1,6 +1,6 @@
 {
   "name": "zalo-bot-js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for the Zalo Bot API.",
   "homepage": "https://kaiyodev.github.io/zalo-bot-js/",
   "main": "./dist/src/index.js",
@@ -47,6 +47,7 @@
   "dependencies": {
     "dotenv": "^17.4.0",
     "sharp": "^0.34.5",
+    "sqlite3": "^6.0.1",
     "translate-google": "^1.5.0"
   }
 }

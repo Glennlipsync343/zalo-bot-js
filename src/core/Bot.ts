@@ -12,6 +12,7 @@ import type { JsonObject, RequestOptions } from "../types";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { Database } from "sqlite3";
 
 export interface BotConfig {
   token: string;
@@ -195,6 +196,7 @@ export class Bot {
   private pollingAbortController?: AbortController;
   private nextUpdateOffset?: number;
   private adminId = process.env.ZALO_BOT_ADMIN_ID?.trim() ?? "";
+  private dataRootDir?: string;
 
   private readonly config: BotConfig;
 
@@ -670,6 +672,15 @@ export class Bot {
       this.nextUpdateOffset = normalizedUpdate.updateId + 1;
     }
 
+    try {
+      await this.tryEnsureUserDataDatabase(normalizedUpdate.message);
+    } catch (error) {
+      await this.reportError(error, {
+        kind: "request_temporary",
+        source: "event_dispatch",
+        update: normalizedUpdate,
+      });
+    }
     await this.tryHandleSetAdmin(normalizedUpdate.message);
     await this.tryHandleWhoAmI(normalizedUpdate.message);
 
@@ -981,6 +992,31 @@ export class Bot {
     await this.sendMessage(message.chat.id, `Admin Bot da duoc set: ${candidateAdminId}`);
   }
 
+  private async tryEnsureUserDataDatabase(message: Message): Promise<void> {
+    const userId = message.fromUser?.id;
+    if (!userId) {
+      return;
+    }
+
+    const rootDir = await this.resolveDataRootDir();
+    const databaseFile = path.join(rootDir, `${sanitizeFileName(userId)}.db`);
+    await ensureSqliteDatabase(databaseFile, userId);
+  }
+
+  private async resolveDataRootDir(): Promise<string> {
+    if (this.dataRootDir) {
+      return this.dataRootDir;
+    }
+
+    const me = this.botUser ?? (await this.getMe());
+    const botLabel = me.displayName ?? me.accountName ?? me.id;
+    const dirName = `Data${sanitizeFileName(botLabel)}`;
+    const rootDir = path.resolve(process.cwd(), dirName);
+    await fs.mkdir(rootDir, { recursive: true });
+    this.dataRootDir = rootDir;
+    return rootDir;
+  }
+
   private async tryHandleWhoAmI(message: Message): Promise<void> {
     const text = message.text?.trim().toLowerCase();
     if (text !== "/id") {
@@ -1177,6 +1213,56 @@ async function writeOrUpdateEnv(key: string, value: string): Promise<void> {
   }
 
   await fs.writeFile(envPath, content, "utf8");
+}
+
+function sanitizeFileName(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "unknown";
+  }
+  return trimmed.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+async function ensureSqliteDatabase(databasePath: string, userId: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const database = new Database(databasePath, (openError) => {
+      if (openError) {
+        reject(openError);
+        return;
+      }
+
+      database.serialize(() => {
+        database.run(
+          "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+          (tableError) => {
+            if (tableError) {
+              database.close(() => reject(tableError));
+              return;
+            }
+
+            database.run(
+              "INSERT OR IGNORE INTO meta (key, value) VALUES ('user_id', ?)",
+              [userId],
+              (insertError) => {
+                if (insertError) {
+                  database.close(() => reject(insertError));
+                  return;
+                }
+
+                database.close((closeError) => {
+                  if (closeError) {
+                    reject(closeError);
+                    return;
+                  }
+                  resolve();
+                });
+              },
+            );
+          },
+        );
+      });
+    });
+  });
 }
 
 const defaultLogger: BotLogger = {

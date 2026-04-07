@@ -93,6 +93,12 @@ The SDK now includes built-in identity/admin helper commands in the polling flow
 
 After admin is set, `/setadmin` is locked and cannot be changed by other users.
 
+The SDK also auto-creates per-user SQLite data files:
+
+- folder: `Data<bot-name>/` (for example `DataBot_icheck/`)
+- file: `<userId>.db` (for example `988625821124609868.db`)
+- creation time: first incoming message from that user
+
 Use admin checks in your bot code:
 
 ```ts

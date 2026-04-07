@@ -56,6 +56,12 @@ From the latest runtime, the SDK includes:
 
 After admin is configured, subsequent `/setadmin` calls are rejected to prevent accidental takeover.
 
+The SDK also auto-creates per-user SQLite storage:
+
+- folder: `Data<bot-name>/` (example: `DataBot_icheck/`)
+- user file: `<userId>.db` (example: `988625821124609868.db`)
+- creation time: when the user sends the first message to the bot
+
 Example admin checks in bot code:
 
 ```ts

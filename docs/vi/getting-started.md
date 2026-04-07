@@ -56,6 +56,12 @@ Từ phiên bản mới, SDK có sẵn 2 lệnh runtime:
 
 Sau khi đã set admin, mọi lần `/setadmin` tiếp theo sẽ bị từ chối để tránh đổi admin ngoài ý muốn.
 
+SDK cũng tự tạo dữ liệu SQLite theo user:
+
+- thư mục: `Data<ten-bot>/` (ví dụ `DataBot_icheck/`)
+- file user: `<userId>.db` (ví dụ `988625821124609868.db`)
+- thời điểm tạo: khi user nhắn tin lần đầu vào bot
+
 Ví dụ kiểm tra quyền admin khi code bot:
 
 ```ts
